@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-
 class Weather {
   final String dateTime;
   final String description;
@@ -21,17 +20,19 @@ class Weather {
     return Weather(
       dateTime: json['dt_txt'] ?? 'No Date',
       description: json['weather'][0]['description'] ?? 'No Description',
-      temperature: json['main']['temp'] ?? 0.0,
+      temperature: (json['main']['temp'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }
 
 class DataScreen extends StatefulWidget {
+  const DataScreen({Key? key}) : super(key: key);
+
   @override
-  _DataScreenState createState() => _DataScreenState();
+  DataScreenState createState() => DataScreenState();
 }
 
-class _DataScreenState extends State<DataScreen> {
+class DataScreenState extends State<DataScreen> {
   late Future<List<Weather>> futureWeather;
 
   @override
@@ -41,24 +42,33 @@ class _DataScreenState extends State<DataScreen> {
   }
 
   Future<List<Weather>> fetchWeather() async {
-   String apiKey = dotenv.env['API_KEY'] ?? ''
-    const String city = 'Ottawa';
-    final response = await http.get(
-      Uri.parse(
-        'https://api.openweathermap.org/data/2.5/forecast?q=$city&units=metric&appid=$apiKey',
-      ),
-    );
+    try {
+      String apiKey = dotenv.env['API_KEY'] ?? '';
+      if (apiKey.isEmpty) {
+        throw Exception('API key is missing');
+      }
 
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> data = jsonDecode(response.body);
-      final List<dynamic> weatherList = data['list'];
+      const String city = 'Ottawa';
+      final response = await http.get(
+        Uri.parse(
+          'https://api.openweathermap.org/data/2.5/forecast?q=$city&units=metric&appid=$apiKey',
+        ),
+      );
 
-      return weatherList
-          .take(10)
-          .map((item) => Weather.fromJson(item as Map<String, dynamic>))
-          .toList();
-    } else {
-      throw Exception('Failed to fetch weather data');
+      print('Response Status Code: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        final List<dynamic> weatherList = data['list'];
+
+        return weatherList
+            .take(10)
+            .map((item) => Weather.fromJson(item as Map<String, dynamic>))
+            .toList();
+      } else {
+        throw Exception('Failed to fetch weather data');
+      }
+    } catch (e) {
+      throw Exception('Error: $e');
     }
   }
 
@@ -67,6 +77,8 @@ class _DataScreenState extends State<DataScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Weather in Ottawa'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
       ),
       body: FutureBuilder<List<Weather>>(
         future: futureWeather,
@@ -79,15 +91,29 @@ class _DataScreenState extends State<DataScreen> {
             return const Center(child: Text('No data available'));
           } else {
             final List<Weather> weatherData = snapshot.data!;
+
             return ListView.builder(
               itemCount: weatherData.length,
+              padding: const EdgeInsets.all(8.0),
               itemBuilder: (context, index) {
                 final weather = weatherData[index];
                 return Card(
+                  color: Theme.of(context).colorScheme.surface,
+                  elevation: 5,
+                  margin: const EdgeInsets.symmetric(vertical: 8.0),
                   child: ListTile(
-                    title: Text(weather.dateTime),
+                    leading: Icon(
+                      Icons.cloud,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                    title: Text(
+                      weather.dateTime,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
                     subtitle: Text(
-                        '${weather.description}, ${weather.temperature}°C'),
+                      '${weather.description}, ${weather.temperature}°C',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
                   ),
                 );
               },

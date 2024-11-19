@@ -1,13 +1,18 @@
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
+
 import 'screens/home.dart';
 import 'screens/data.dart';
 import 'screens/contact.dart';
 
 Future<void> main() async {
-  await dotenv.load(fileName: ".env");
-  runApp(MyApp());
+  try {
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    print('Error loading .env: $e');
+  }
+  runApp(const MainApp());
 }
 
 class MainApp extends StatelessWidget {
@@ -24,14 +29,19 @@ class MainApp extends StatelessWidget {
           brightness: Brightness.dark,
         ),
         textTheme: TextTheme(
-          titleLarge: GoogleFonts.oswald(
-            fontSize: 28,
+          displayLarge: const TextStyle(
+            fontSize: 72,
             fontWeight: FontWeight.bold,
-            color: Colors.tealAccent,
+          ),
+          titleLarge: GoogleFonts.oswald(
+            fontSize: 30,
+            fontStyle: FontStyle.italic,
           ),
           bodyMedium: GoogleFonts.merriweather(
-            fontSize: 18,
-            color: Colors.white70,
+            fontSize: 16,
+          ),
+          displaySmall: GoogleFonts.pacifico(
+            fontSize: 24,
           ),
         ),
       ),
@@ -51,7 +61,14 @@ class _NavigationScreenState extends State<NavigationScreen> {
   int currentPageIndex = 0;
 
   @override
+  void initState() {
+    super.initState();
+    print('NavigationScreenState initialized');
+  }
+
+  @override
   Widget build(BuildContext context) {
+    print('NavigationScreenState build method called');
     final ThemeData theme = Theme.of(context);
 
     final List<Widget> pages = [
@@ -62,8 +79,17 @@ class _NavigationScreenState extends State<NavigationScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Flutter Navigation App'),
+        title: Text(
+          'Flutter Navigation App',
+          style: theme.textTheme.titleLarge!.copyWith(
+            color: theme.colorScheme.onPrimary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: theme.colorScheme.primary,
+        foregroundColor: theme.colorScheme.onPrimary,
       ),
+      backgroundColor: theme.colorScheme.surface,
       body: pages[currentPageIndex],
       bottomNavigationBar: NavigationBar(
         selectedIndex: currentPageIndex,
@@ -72,7 +98,7 @@ class _NavigationScreenState extends State<NavigationScreen> {
             currentPageIndex = index;
           });
         },
-        indicatorColor: Colors.amber,
+        indicatorColor: theme.colorScheme.secondary,
         destinations: const <Widget>[
           NavigationDestination(
             selectedIcon: Icon(Icons.home),
